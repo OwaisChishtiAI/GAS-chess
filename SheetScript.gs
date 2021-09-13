@@ -4,71 +4,76 @@ function setEmails() {
     SpreadsheetApp.getActiveSheet().getRange('J11').setValue(emails.black);
   }
   
+  function setTimer(){
+    var timerCell = SpreadsheetApp.getActiveSheet().getRange('J7');
+    timerCell.setValue("00:00");
+    timerCell.setHorizontalAlignment("center").setVerticalAlignment("middle");
+    timerCell.setFontSize(28);
+  }
+  
+  function reset_timer(){
+    setTimer();
+  }
+  
+  function start_timer(){
+    var d = new Date();
+    var tick = d.getTime()
+    var sourceSS = SpreadsheetApp.getActiveSpreadsheet();      //= Spreadsheet
+    var dataSheet = sourceSS.getSheetByName("Executions");
+    dataSheet.getRange('Z999').setValue(tick);
+  }
+  
+  function stop_timer(){
+    var d = new Date();
+    var tock = d.getTime()
+    var sourceSS = SpreadsheetApp.getActiveSpreadsheet();      //= Spreadsheet
+    var dataSheet = sourceSS.getSheetByName("Executions");
+    var tick = dataSheet.getRange('Z999').getValue();
+    var minutes = Math.floor((tock-tick)/(24*3600));
+    var seconds = Math.floor((tock-tick)/(24*60));
+    var delta = minutes + " : " + seconds;
+    Logger.log(delta);
+    var timerCell = SpreadsheetApp.getActiveSheet().getRange('J7');
+    timerCell.setValue(delta.toString());
+    timerCell.setHorizontalAlignment("center").setVerticalAlignment("middle");
+    timerCell.setFontSize(28);
+  }
+  
+  
   function onOpen(e) {
     // Add a custom menu to the spreadsheet.
-    setEmails()
+    setEmails();
+    setTimer();
   }
   
-  function randomNumber(){
-    var random_number = Math.random();
-    random_number = (random_number * 100 + 1) + (Math.random() + 200) + (Math.random() * 10);
-    random_number = parseInt(random_number);
-    random_number = random_number.toString()
-    Logger.log(random_number);
+  function sendMail(){
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ssID = ss.getId();
+    var sheetgId = ss.getActiveSheet().getSheetId();
+    var sheetName = "Chess";
+  
+    var token = ScriptApp.getOAuthToken();
+  
+    var emails = findItem()
+  
+    var email = emails.white;
+    var subject = "Important Info!";
+    var body = "PFA the report \n\nCheers,\n Roportobot";
+  
+    var url = "https://docs.google.com/spreadsheets/d/"+ssID+"/export?" + "format=xlsx" +  "&gid="+sheetgId+ "&portrait=true" + "&exportFormat=pdf";
+  
+    var result = UrlFetchApp.fetch(url, {
+    headers: {
+      'Authorization': 'Bearer ' +  token
+    }
+    });
+  
+    var contents = result.getContent();
+  
+    MailApp.sendEmail(email,subject ,body, {name: 'Google Chess Engine', "cc": emails.black, attachments:[{fileName:sheetName+".pdf", content:contents, mimeType:"application//pdf"}]});
   }
   
-  function sendMail()
-  {
-    // var Drive = DriveApp;
-    // var Name = "Chess Engine";
-    // var app = SpreadsheetApp;
-    // var LOOKUP = app.getActiveSpreadsheet().getSheetByName("Chess");
-    // // var cell = LOOKUP.getRange("D1");  
-    // // var Addr = cell.getValue();
-    // // var ROW = LOOKUP.getLastRow();
-    // var Addr = "sowais672@gmail.com"
-    // var file = Drive.getFilesByName(Name);
-    // var file = file.next();
-    // var FORMAT = file.getAs(MimeType.GOOGLE_SHEETS);
-  
-    // TigerMail.sendEmail(Addr, "Hours", "Attached is a list of all of the events you have volunteered at:", {attachments: [FORMAT]} );
-  
-  var file = DriveApp.getFileById('1kbVbgGk9rj3yfP4A2ILQUxMMhQTP5McKcrpAaYBwD34').getSheetByName('Chess');
-  // var file = SpreadsheetApp.getActiveSpreadsheet();
-  // SpreadsheetApp.setActiveSheet(file.getSheetByName('Chess'))
-  // var blob = Utilities.newBlob('Insert any HTML content here', 'text/html', 'my_document.html');
-  MailApp.sendEmail('sowais672@gmail.com', 'Chess Board Positions', 'PFA Chess Board Positions', {
-      name: 'Google Chess Engine',
-      attachments: [file.getAs(MimeType.PDF)]
-  });
-  Browser.msgBox("Email Sent.")
-  }
-  function test(){
-  var ss = SpreadsheetApp.getActiveSpreadsheet()
-  var ssID = ss.getId();
-  var sheetgId = ss.getActiveSheet().getSheetId();
-  var sheetName = "Chess";
-  
-  var token = ScriptApp.getOAuthToken();
-  
-  var email = "sowais672@gmail.com";
-  var subject = "Important Info!";
-  var body = "PFA the report \n\nCheers,\n Roportobot";
-  
-  var url = "https://docs.google.com/spreadsheets/d/"+ssID+"/export?" + "format=xlsx" +  "&gid="+sheetgId+ "&portrait=true" + "&exportFormat=pdf";
-  
-  var result = UrlFetchApp.fetch(url, {
-  headers: {
-    'Authorization': 'Bearer ' +  token
-  }
-  });
-  
-  var contents = result.getContent();
-  
-  MailApp.sendEmail(email,subject ,body, {attachments:[{fileName:sheetName+".pdf", content:contents, mimeType:"application//pdf"}]});
-  }
-  
-  function findItem(item){
+  function findItem(){
     var sourceSS = SpreadsheetApp.getActiveSpreadsheet();      //= Spreadsheet
     var dataSheet = sourceSS.getSheetByName("players");           //= Sheet
     var dataLastRow = dataSheet.getLastRow(); 
